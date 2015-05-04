@@ -143,9 +143,9 @@ int xrad_cache_dbm_post_config(apr_pool_t *p, server_rec *s,
     /* Running as Root */
     if (geteuid() == 0)  {
         /* Allow the configured Apache use to read/write to the DBM */
-        chown(path1, unixd_config.user_id, -1);
+        chown(path1, ap_unixd_config.user_id, -1);
         if (path2 != NULL) { 
-            chown(path2, unixd_config.user_id, -1);
+            chown(path2, ap_unixd_config.user_id, -1);
         }
     }
 #endif
