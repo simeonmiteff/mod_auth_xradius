@@ -1,0 +1,151 @@
+/**
+ *  Copyright 2005, Paul Querna
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
+#include "httpd.h"
+#include "http_config.h"
+#include "http_protocol.h"
+#include "http_connection.h"
+#include "http_request.h"
+#include "http_core.h"
+#include "http_log.h"
+#include "apr_buckets.h"
+#include "apr_strings.h"
+#include "apr_tables.h"
+#include "apr_dbm.h"
+#include "ap_release.h"
+#include "ap_mpm.h"
+#include <unistd.h>
+#include <sys/types.h>
+
+
+#ifndef __mod_auth_xradius_h_inc
+#define __mod_auth_xradius_h_inc
+
+/**
+ * Caching via memcached is optional.  If apr_memcache is not found installed,
+ * it will be disabled, and only the DBM cache will be available.
+ */
+#define HAVE_APR_MEMCACHE    @have_apr_memcache@
+
+module AP_MODULE_DECLARE_DATA auth_xradius_module;
+
+#define MOD_AUTH_XRADIUS_VERSION "@MOD_AUTH_XRADIUS_VERSION@"
+
+#define XRAD_DEBUG @OOO_MAINTAIN@
+
+/* Recent Versions of 2.1 renamed several hooks. This allows us to 
+   compile on 2.0.xx  */
+#if AP_SERVER_MINORVERSION_NUMBER >= 1
+#if AP_SERVER_PATCHLEVEL_NUMBER >= 3
+#define USING_2_1_RECENT 1
+#endif
+#endif 
+
+#ifndef USING_2_1_RECENT
+#define USING_2_1_RECENT 0
+#endif
+
+typedef enum 
+{
+    xrad_cache_none,
+    xrad_cache_dbm,
+#if HAVE_APR_MEMCACHE
+    xrad_cache_memcache
+#endif
+} xrad_cache_e;
+
+#if HAVE_APR_MEMCACHE
+#include "apr_memcache.h"
+#endif
+
+
+#if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE)
+/* Used to get the Unix User that the Server will run As. */
+#include "unixd.h"
+#endif
+
+#define RAD_DEFAULT_PORT 1812
+#define RAD_DEFAULT_TIMEOUT 2
+#define RAD_DEFAULT_MAX_TRIES 2
+#define RAD_DEFAULT_CACHE_TIMEOUT 600
+
+/* Simple Repsersentation of a RADIUS Server */
+typedef struct {
+    /* Port number of the RADIUS Server*/
+    apr_port_t port;
+    /* Hostname of the RADIUS Server */
+    char* hostname;
+    /* Shared Secert for the RADIUS Server */
+    const char* secret;
+} xrad_server_info;
+
+/* Directory Configuration Structure */
+typedef struct
+{
+    /* Array of xrad_server_info for this directory */
+    apr_array_header_t* servers;
+    /* How long to wait for a reply from any server */
+    int timeout;
+    /* How many attempts to transmit the Authentication Request */
+    int maxtries;
+    /* Should we reject any requests with a blank password */
+    int reject_blank;
+} xrad_dirconf_rec;
+
+/* Server Configuration Structure */
+typedef struct
+{
+    /* Type of global Cache to use */
+    xrad_cache_e cache_type;
+    /* Configuration args for this cache type.
+     * DBM uses a File Path.  Memcache uses a space seperated list of servers
+     */
+    const char* cache_config;
+    /* Timeout for entries in the cache. */
+    int cache_timeout;
+} xrad_serverconf_rec;
+
+/* Default File Mode for the DBM File Accesses */
+#define XRAD_DBM_FILE_MODE ( APR_UREAD | APR_UWRITE | APR_GREAD | APR_WREAD )
+
+/* DBM Caching Functions */
+int xrad_cache_dbm_expire(server_rec *s, xrad_serverconf_rec* sc, 
+                          apr_pool_t* p, apr_time_t current_time);
+
+int xrad_cache_dbm_post_config(apr_pool_t *p, server_rec *s, 
+                               xrad_serverconf_rec *sc);
+
+int xrad_cache_dbm_check(request_rec* r, xrad_serverconf_rec *sc,
+                         const char* user, const char* password);
+
+int xrad_cache_dbm_store(request_rec* r, xrad_serverconf_rec *sc,
+                         const char* user, const char* password, int result);
+
+/* The Optional Memcache Cache Functions */
+#if HAVE_APR_MEMCACHE
+int xrad_cache_mc_child_init(apr_pool_t *p, server_rec *s, 
+                             xrad_serverconf_rec *sc);
+                             
+int xrad_cache_mc_check(request_rec* r, xrad_serverconf_rec *sc,
+                        const char* user, const char* password);
+                        
+int xrad_cache_mc_store(request_rec* r, xrad_serverconf_rec *sc,
+                         const char* user, const char* password, int result);
+
+#endif
+
+#endif /* __mod_auth_xradius_h_inc */

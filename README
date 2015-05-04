@@ -1,0 +1,18 @@
+mod_auth_xradius
+
+Requirements:
+  Apache HTTPD >= 2.0.40
+  apr_memcache >= 0.7.0 (optional)
+
+Build/Install:
+  ./configure \
+      --with-apxs=/usr/local/httpd/bin/apxs
+      --with-apr-memcache=/usr/local/httpd
+   make
+   make install
+   # Edit The httpd.conf, add: 
+   # 'LoadModule auth_xradius_module modules/mod_auth_xradius.so'
+
+Configuration:
+ Please see the mod_auth_xradius website for details:
+   http://www.outoforder.cc/projects/apache/mod_auth_xradius/docs/

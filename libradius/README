@@ -1,0 +1,21 @@
+This libradius library implements the client side of the Remote
+Authentication Dial In User Service (RADIUS). RADIUS, defined in RFCs
+2138 and 2139, allows clients to perform authentication and accounting
+by means of network requests to remote servers.
+
+This software was originally written by John Polstra, and donated to the
+FreeBSD project by Juniper Networks, Inc. Oleg Semyonov subsequently
+added the ability to perform RADIUS accounting.
+
+The following source files were extracted from a FreeBSD 5-STABLE
+system as of 20-Sep-2004:
+
+    /usr/src/sys/sys/md5.h
+    /usr/src/lib/libmd/md5c.c
+    /usr/src/lib/libradius/libradius.3
+    /usr/src/lib/libradius/radius.conf.5
+    /usr/src/lib/libradius/radlib.c
+    /usr/src/lib/libradius/radlib.h
+    /usr/src/lib/libradius/radlib_private.h
+    /usr/src/lib/libradius/radlib_vs.h
+
